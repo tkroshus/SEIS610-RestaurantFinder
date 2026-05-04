@@ -101,7 +101,9 @@ function renderResults(list) {
                 <strong>${r.name}</strong><br>
                 Rating: ${r.rating}★<br>
                 Price: ${r.price}<br>
-                Distance: ${r.distance} miles
+                Distance: ${r.distance} miles<br>
+                Address: ${r.address}<br>
+                <a href="${r.url}" target="_blank">View on Yelp</a>
             `;
         container.appendChild(div);
     });
@@ -175,9 +177,13 @@ fetch(`${API_BASE}/check_login`)
     .then(res => res.json())
     .then(data => {
         if (data.is_owner) {
-            document.getElementById("ownerPromoBox").style.display = "block";
+            document.getElementById("logoutButton").style.display = "block";
+            document.getElementById("ownerDashboardButton").style.display = "block";
+            document.getElementById("guestLoginButton").style.display = "none";
         } else {
-            document.getElementById("ownerPromoBox").style.display = "none";
+            document.getElementById("logoutButton").style.display = "none";
+            document.getElementById("ownerDashboardButton").style.display = "none"
+            document.getElementById("guestLoginButton").style.display = "block";
         }
     });
 

@@ -36,6 +36,9 @@ function loadRestaurants() {
                 <strong>${r.name}</strong><br>
                 Promotions used: ${r.promo_uses}<br>
                 Traffic increase: <span style="color: green; font-weight: bold;">+${r.traffic_increase}%</span>
+
+                <input type="number" id="diners-${r.id}" placeholder="Add additional promotion uses">
+                <button onclick="saveDiners(${r.id})">Save</button>
             `;
                 list.appendChild(li);
             });
@@ -46,22 +49,31 @@ function loadRestaurants() {
 
 // Save restaurant info
 function saveRestaurant() {
-    const body = {
+    const payload = {
         name: document.getElementById("restName").value,
         address: document.getElementById("restAddress").value,
-        hours: document.getElementById("restHours").value,
-        image_url: document.getElementById("restImage").value,
-        description: document.getElementById("restDescription").value
     };
 
-    fetch(`${API}/api/restaurant/save`, {
+    fetch(`${API}/api/owner/restaurant`, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        credentials: "include",
+        body: JSON.stringify(payload)
     })
-        .then(r => r.json())
-        .then(() => alert("Restaurant info saved!"));
+    .then(r => r.json())
+    .then(data => {
+        console.log("Saved:", data);
+
+        // ⭐ THIS IS THE IMPORTANT PART
+        loadRestaurants();
+
+        // Optional: clear form
+        document.getElementById("restName").value = "";
+        document.getElementById("restAddress").value = "";
+        document.getElementById("restHours").value = "";
+        document.getElementById("restImage").value = "";
+        document.getElementById("restDescription").value = "";
+    });
 }
 
 // Load promotions
@@ -95,6 +107,26 @@ function addPromotion() {
             loadPromotions();
         });
 }
+
+
+// Save diners count for a restaurant
+function saveDiners(id) {
+    const value = document.getElementById(`diners-${id}`).value;
+
+    fetch(`${API}/api/owner/restaurant/diners`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id: id, diners: Number(value) })
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log("Updated promotions used:", data);
+        loadRestaurants(); // refresh UI
+    });
+}
+
+
 
 // Logout
 function logout() {

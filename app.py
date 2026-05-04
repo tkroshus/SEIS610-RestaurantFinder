@@ -1,4 +1,5 @@
 # http://127.0.0.1:5000
+# 100 Main St, Minneapolis, MN
 
 from flask import Flask, request, jsonify, session, redirect
 import requests
@@ -61,7 +62,7 @@ def get_restaurants():
         "latitude": MINNEAPOLIS_LAT,
         "longitude": MINNEAPOLIS_LON,
         "radius": radius,
-        "limit": 50,
+        "limit": 10, # was 50
         "sort_by": "rating"
     }
 
@@ -114,7 +115,7 @@ def explore():
             "price": r.get("price", "?"),
             "distance": round(r.get("distance", 0) / 1609.34, 2),
             "address": " ".join(r["location"].get("display_address", [])),
-            "image_url": r.get("image_url", "")
+            "url": r["url"]
         }
         for r in data
     ]
@@ -268,19 +269,22 @@ dummy_restaurants = [
         "id": 1,
         "name": "Sunset Grill",
         "promo_uses": 42,
-        "traffic_increase": 18  # %
+        "traffic_increase": 18,  # %
+        "diners_from_promo": 0
     },
     {
         "id": 2,
         "name": "Ocean Breeze Cafe",
         "promo_uses": 17,
-        "traffic_increase": 9
+        "traffic_increase": 9,
+        "diners_from_promo": 0
     },
     {
         "id": 3,
         "name": "Mountain View Diner",
         "promo_uses": 8,
-        "traffic_increase": 4
+        "traffic_increase": 4,
+        "diners_from_promo": 0
     }
 ]
 
@@ -291,6 +295,46 @@ def owner_restaurants():
         return jsonify({"error": "Unauthorized"}), 403
 
     return jsonify({"restaurants": dummy_restaurants})
+
+
+@app.route("/api/owner/restaurant", methods=["POST"])
+def save_owner_restaurant():
+    if not session.get("is_owner"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.json
+
+    new_restaurant = {
+        "id": len(dummy_restaurants) + 1,
+        "name": data["name"],
+        "promo_uses": 0,
+        "traffic_increase": 0
+    }
+
+    dummy_restaurants.append(new_restaurant)
+
+    return jsonify({"success": True, "restaurant": new_restaurant})
+
+
+@app.route("/api/owner/restaurant/diners", methods=["POST"])
+def update_diners():
+    if not session.get("is_owner"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.json
+    rest_id = data.get("id")
+    diners = data.get("diners")
+
+    for r in dummy_restaurants:
+        if r["id"] == rest_id:
+            r["promo_uses"] += diners   # ⭐ update promotions used
+            # ⭐ Increase traffic % based on diners added
+            r["traffic_increase"] += diners * 0.5  # 2 diners = +1%
+            r["traffic_increase"] = round(r["traffic_increase"], 1)   # ⭐ format to 1 decimal
+            return jsonify({"success": True})
+
+    return jsonify({"error": "Restaurant not found"}), 404
+
 
 
 
