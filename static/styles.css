@@ -99,3 +99,8 @@ button:hover {
 .guestLoginButton:hover {
     background: #45a049;
 }
+
+#trafficChart {
+    padding: 300px;
+    height: 140px
+}

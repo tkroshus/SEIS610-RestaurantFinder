@@ -14,9 +14,6 @@ function loadRestaurant() {
         .then(data => {
             document.getElementById("restName").value = data.name || "";
             document.getElementById("restAddress").value = data.address || "";
-            document.getElementById("restHours").value = data.hours || "";
-            document.getElementById("restImage").value = data.image_url || "";
-            document.getElementById("restDescription").value = data.description || "";
         });
 }
 
@@ -32,18 +29,32 @@ function loadRestaurants() {
 
             data.restaurants.forEach(r => {
                 const li = document.createElement("li");
+
                 li.innerHTML = `
                 <strong>${r.name}</strong><br>
                 Promotions used: ${r.promo_uses}<br>
-                Traffic increase: <span style="color: green; font-weight: bold;">+${r.traffic_increase}%</span>
+                Traffic increase: 
+                    <span style="color: green; font-weight: bold;">
+                        +${r.traffic_increase}%
+                    </span>
+                <br><br>
 
-                <input type="number" id="diners-${r.id}" placeholder="Add additional promotion uses">
+                <input type="number" id="diners-${r.id}" 
+                       placeholder="Add additional promotion uses">
                 <button onclick="saveDiners(${r.id})">Save</button>
             `;
+
+                // ⭐ NEW: clicking a restaurant loads its traffic chart
+                li.style.cursor = "pointer";
+                li.addEventListener("click", () => {
+                    renderTrafficChart(r.traffic_history);
+                });
+
                 list.appendChild(li);
             });
         });
 }
+
 
 
 
@@ -60,20 +71,20 @@ function saveRestaurant() {
         credentials: "include",
         body: JSON.stringify(payload)
     })
-    .then(r => r.json())
-    .then(data => {
-        console.log("Saved:", data);
+        .then(r => r.json())
+        .then(data => {
+            console.log("Saved:", data);
 
-        // ⭐ THIS IS THE IMPORTANT PART
-        loadRestaurants();
+            // ⭐ THIS IS THE IMPORTANT PART
+            loadRestaurants();
 
-        // Optional: clear form
-        document.getElementById("restName").value = "";
-        document.getElementById("restAddress").value = "";
-        document.getElementById("restHours").value = "";
-        document.getElementById("restImage").value = "";
-        document.getElementById("restDescription").value = "";
-    });
+            // Optional: clear form
+            document.getElementById("restName").value = "";
+            document.getElementById("restAddress").value = "";
+            document.getElementById("restHours").value = "";
+            document.getElementById("restImage").value = "";
+            document.getElementById("restDescription").value = "";
+        });
 }
 
 // Load promotions
@@ -119,10 +130,50 @@ function saveDiners(id) {
         credentials: "include",
         body: JSON.stringify({ id: id, diners: Number(value) })
     })
-    .then(r => r.json())
-    .then(data => {
-        console.log("Updated promotions used:", data);
-        loadRestaurants(); // refresh UI
+        .then(r => r.json())
+        .then(data => {
+            console.log("Updated promotions used:", data);
+            loadRestaurants(); // refresh UI
+        });
+}
+
+
+let trafficChart = null;
+
+function renderTrafficChart(history) {
+    const ctx = document.getElementById("trafficChart").getContext("2d");
+
+    if (trafficChart) {
+        trafficChart.destroy();
+    }
+
+    trafficChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: history.map((_, i) => `Month ${i + 1}`),
+            datasets: [{
+                label: "Traffic Increase (%)",
+                data: history,
+                borderColor: "#4A90E2",
+                backgroundColor: "rgba(74, 144, 226, 0.2)",
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            layout: {
+                padding: {
+                    top: 10,
+                    bottom: 10,
+                    left: 10,
+                    right: 10
+                }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+
     });
 }
 

@@ -270,21 +270,21 @@ dummy_restaurants = [
         "name": "Sunset Grill",
         "promo_uses": 42,
         "traffic_increase": 18,  # %
-        "diners_from_promo": 0
+        "traffic_history": [18, 20, 25, 27]  # for graphing over time
     },
     {
         "id": 2,
         "name": "Ocean Breeze Cafe",
         "promo_uses": 17,
         "traffic_increase": 9,
-        "diners_from_promo": 0
+        "traffic_history": [5, 7, 9, 10]
     },
     {
         "id": 3,
         "name": "Mountain View Diner",
         "promo_uses": 8,
         "traffic_increase": 4,
-        "diners_from_promo": 0
+        "traffic_history": [2, 3, 4, 4.5]
     }
 ]
 
@@ -331,6 +331,7 @@ def update_diners():
             # ⭐ Increase traffic % based on diners added
             r["traffic_increase"] += diners * 0.5  # 2 diners = +1%
             r["traffic_increase"] = round(r["traffic_increase"], 1)   # ⭐ format to 1 decimal
+            r["traffic_history"].append(r["traffic_increase"])
             return jsonify({"success": True})
 
     return jsonify({"error": "Restaurant not found"}), 404

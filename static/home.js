@@ -54,11 +54,11 @@ function startPromotionCycle() {
     document.getElementById("promoText").innerText = promoList[promoIndex];
     document.getElementById("promotionArea").style.display = "block";
 
-    // Cycle every 5 seconds
+    // Cycle every 4 seconds
     setInterval(() => {
         promoIndex = (promoIndex + 1) % promoList.length;
         document.getElementById("promoText").innerText = promoList[promoIndex];
-    }, 5000);
+    }, 4000);
 }
 
 // Search restaurants
