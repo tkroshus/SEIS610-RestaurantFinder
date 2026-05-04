@@ -1,105 +1,13 @@
 # http://127.0.0.1:5000
 
-# from flask import Flask, request, jsonify
-# import random
-
-# app = Flask(__name__)
-
-# # -----------------------------
-# # Mock Data (Replace with DB later)
-# # -----------------------------
-# restaurants = [
-#     {"name": "Sushi Place", "rating": 4.5, "price": "$$", "distance": 2},
-#     {"name": "Burger Town", "rating": 4.0, "price": "$", "distance": 1},
-#     {"name": "Fancy Steakhouse", "rating": 5.0, "price": "$$$", "distance": 4},
-#     {"name": "Taco Spot", "rating": 3.5, "price": "$", "distance": 3},
-#     {"name": "Pasta Paradise", "rating": 4.2, "price": "$$", "distance": 2},
-#     {"name": "Curry Corner", "rating": 4.7, "price": "$$", "distance": 5},
-#     {"name": "Vegan Vibes", "rating": 4.3, "price": "$$", "distance": 1},
-#     {"name": "Pizza Palace", "rating": 3.9, "price": "$", "distance": 3},
-#     {"name": "Mediterranean Grill", "rating": 4.6, "price": "$$", "distance": 4},
-#     {"name": "Noodle Haven", "rating": 4.1, "price": "$", "distance": 2}
-# ]
-
-# promotions = [
-#     "20% off at Sushi Place today!",
-#     "Happy Hour at Taco Spot — 3pm to 6pm!",
-#     "Free dessert at Fancy Steakhouse tonight!",
-#     "Buy one entrée, get one half off at Pasta Paradise!",
-#     "Curry Corner’s Spice Night — free drink with any combo!",
-#     "Vegan Vibes offers 15% off all bowls today only!"
-# ]
-
-# # -----------------------------
-# # Routes
-# # -----------------------------
-
-# last_random = None
-
-# @app.route("/")
-# def home():
-#     return app.send_static_file("index.html")
-
-# @app.route("/api/restaurants")
-# def get_restaurants():
-#     """Return restaurants filtered by quality, budget, and distance."""
-#     # quality = float(request.args.get("quality", 0))
-#     quality_raw = request.args.get("quality", "")
-#     quality = float(quality_raw) if quality_raw else 0
-#     budget = request.args.get("budget", "")
-#     # distance = float(request.args.get("distance", 9999))
-#     distance_raw = request.args.get("distance", "")
-#     distance = float(distance_raw) if distance_raw else 9999
-
-#     filtered = [
-#         r for r in restaurants
-#         if r["rating"] >= quality
-#         and (budget == "" or r["price"] == budget)
-#         and r["distance"] <= distance
-#     ]
-
-#     return jsonify(filtered)
-
-
-# @app.route("/api/explore")
-# def explore():
-#     """Return a random restaurant."""
-#     # return jsonify(random.choice(restaurants))
-#     global last_random
-
-#     # Filter out the last restaurant
-#     choices = [r for r in restaurants if r != last_random]
-
-#     # If all restaurants have been shown, reset
-#     if not choices:
-#         choices = restaurants.copy()
-
-#     pick = random.choice(choices)
-#     last_random = pick
-
-#     return jsonify(pick)
-
-# @app.route("/api/promotions")
-# def get_promotions():
-#     """Return a random promotion."""
-#     return jsonify({"promotion": random.choice(promotions)})
-
-
-# # -----------------------------
-# # Run the server
-# # -----------------------------
-# if __name__ == "__main__":
-#     app.run(debug=True)
-
-
-
-#-------------------------updated below w API-----------
-
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session, redirect
 import requests
 import random
+from werkzeug.security import generate_password_hash, check_password_hash
+import sqlite3
 
 app = Flask(__name__)
+app.secret_key = "super_secret_demo_key_123"
 
 YELP_API_KEY = "44rLSZFxLCGwmbm4tZpH61WzzBVkfDBZ7GrJg61Rc_pFdPejlBGZtJxfSMdJgINsXM2gjrz4yN_p5Lb4ybpvwbReW-NtNKb_4bnZcyIy92waqL6e23z2FSJDJLDyaXYx"
 YELP_ENDPOINT = "https://api.yelp.com/v3/businesses/search"
@@ -111,14 +19,23 @@ MINNEAPOLIS_LON = -93.2650
 # Track last random pick
 last_random = None
 
+#Dummy login
+DUMMY_EMAIL = "owner@example.com"
+DUMMY_PASSWORD = "demo123"
+
 
 def miles_to_meters(miles):
     return int(float(miles) * 1609.34)
 
 
 @app.route("/")
+def login_page():
+    return app.send_static_file("login.html")
+
+
+@app.route("/home")
 def home():
-    return app.send_static_file("index.html")
+    return app.send_static_file("home.html")
 
 
 @app.route("/api/restaurants")
@@ -130,7 +47,7 @@ def get_restaurants():
     # Convert filters
     min_rating = float(quality_raw) if quality_raw else 0
     max_distance_miles = float(distance_raw) if distance_raw else 20
-    max_distance_miles = min(max_distance_miles, 20)  # enforce 30-mile limit
+    max_distance_miles = min(max_distance_miles, 20)  # enforce 20-mile limit
     radius = miles_to_meters(max_distance_miles)
 
     # Convert budget ($, $$, $$$) → Yelp price levels (1,2,3)
@@ -213,14 +130,168 @@ def explore():
     return jsonify(pick)
 
 
+promotions_list = [
+    "20% off at select Minneapolis restaurants today!",
+    "Happy Hour deals across Uptown and North Loop!",
+    "Free dessert at participating restaurants tonight!"
+]
+
+
 @app.route("/api/promotions")
 def get_promotions():
-    promotions = [
-        "20% off at select Minneapolis restaurants today!",
-        "Happy Hour deals across Uptown and North Loop!",
-        "Free dessert at participating restaurants tonight!"
-    ]
-    return jsonify({"promotion": random.choice(promotions)})
+     return jsonify({"promotion": random.choice(promotions_list)})
+
+
+@app.route("/api/promotions/add", methods=["POST"])
+def add_promotion():
+    if not session.get("is_owner") and "owner_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 403
+
+
+    data = request.json
+    new_promo = data.get("promotion", "")
+
+    if new_promo:
+        promotions_list.append(new_promo)
+        return jsonify({"status": "success"})
+
+    return jsonify({"error": "No promotion text provided"}), 400
+
+
+# For testing: view all promotions
+@app.route("/api/promotions/all")
+def get_all_promotions():
+    return jsonify({"promotions": promotions_list})
+
+
+# Registration
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    hashed = generate_password_hash(password)
+
+    conn = sqlite3.connect("app.db")
+    c = conn.cursor()
+
+    try:
+        c.execute("INSERT INTO owners (email, password) VALUES (?, ?)", (email, hashed))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Email already registered"}), 400
+
+    return jsonify({"status": "registered"})
+
+
+# Login
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    conn = sqlite3.connect("app.db")
+    c = conn.cursor()
+    c.execute("SELECT id, password FROM owners WHERE email = ?", (email,))
+    row = c.fetchone()
+
+    if email == DUMMY_EMAIL and password == DUMMY_PASSWORD:
+        session["is_owner"] = True
+        return jsonify({"status": "logged_in"})
+
+    if row and check_password_hash(row[1], password):
+        session["owner_id"] = row[0]
+        return jsonify({"status": "logged_in"})
+
+    return jsonify({"error": "Invalid credentials"}), 401
+
+
+# Logout
+@app.route("/logout")
+def logout():
+    session.clear()
+    return jsonify({"status": "logged_out"})
+
+
+# Check login
+@app.route("/check_login")
+def check_login():
+     return jsonify({
+        "is_owner": session.get("is_owner", False),
+        "is_guest": session.get("is_guest", False)
+    })
+
+
+# Continue as guest
+@app.route("/guest")
+def guest():
+    session.clear()
+    session["is_guest"] = True
+    session["is_owner"] = False
+    return jsonify({"success": True})
+
+
+@app.route("/dashboard")
+def dashboard():
+    if not session.get("is_owner") and "owner_id" not in session:
+        return redirect("/")
+    return app.send_static_file("owner_dashboard.html")
+
+
+
+restaurant_info = {
+    "name": "",
+    "address": "",
+    "hours": "",
+    "image_url": "",
+    "description": ""
+}
+
+@app.route("/api/restaurant")
+def get_restaurant():
+    return jsonify(restaurant_info)
+
+@app.route("/api/restaurant/save", methods=["POST"])
+def save_restaurant():
+    if not session.get("is_owner") and "owner_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.json
+    restaurant_info.update(data)
+    return jsonify({"status": "saved"})
+
+
+dummy_restaurants = [
+    {
+        "id": 1,
+        "name": "Sunset Grill",
+        "promo_uses": 42,
+        "traffic_increase": 18  # %
+    },
+    {
+        "id": 2,
+        "name": "Ocean Breeze Cafe",
+        "promo_uses": 17,
+        "traffic_increase": 9
+    },
+    {
+        "id": 3,
+        "name": "Mountain View Diner",
+        "promo_uses": 8,
+        "traffic_increase": 4
+    }
+]
+
+
+@app.route("/api/owner/restaurants")
+def owner_restaurants():
+    if not session.get("is_owner") and "owner_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    return jsonify({"restaurants": dummy_restaurants})
+
 
 
 if __name__ == "__main__":

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Owner Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+
+    <header>Owner Dashboard</header>
+
+    <div class="container">
+
+        <div class="card">
+            <h2>My Restaurant Information</h2>
+
+            <input id="restName" placeholder="Restaurant Name">
+            <input id="restAddress" placeholder="Address">
+            <input id="restHours" placeholder="Hours">
+            <input id="restImage" placeholder="Image URL">
+            <textarea id="restDescription" placeholder="Description"></textarea>
+
+            <button onclick="saveRestaurant()">Save Restaurant Info</button>
+        </div>
+
+        <div class="card">
+            <h2>My Restaurants</h2>
+            <ul id="restaurantList"></ul>
+        </div>
+
+        <div class="card">
+            <h2>Promotions</h2>
+
+            <input id="promoInput" placeholder="New Promotion">
+            <button onclick="addPromotion()">Add Promotion</button>
+
+            <ul id="promoList"></ul>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <button onclick="goHome()">Back to Home</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+
+    </div>
+
+    <script src="/static/owner_dashboard.js"></script>
+
+</body>
+
+</html>

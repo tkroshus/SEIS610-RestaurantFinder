@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Finder</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+
+    <div id="logoutButton" style="
+    position:absolute;
+    top:15px;
+    right:20px;
+    display:none;
+">
+        <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+
+    <div id="guestLoginButton" style="
+    position:absolute;
+    top:15px;
+    right:100px;
+    display:none;
+">
+        <button onclick="goToLogin()">Login</button>
+    </div>
+
+    <div id="userTypeContainer" style="
+    position:absolute;
+    top:15px;
+    right:180px;
+    display:none;
+">
+        <select id="userType" onchange="handleUserTypeChange()">
+            <option value="diner">Diner</option>
+            <option value="owner">Restaurant Owner</option>
+        </select>
+    </div>
+
+    <button onclick="window.location.href='/dashboard'">Owner Dashboard</button>
+
+
+    <header>Restaurant Finder</header>
+
+    <div class="container">
+
+        <!-- Promotions style="display:none;" -->
+        <div id="promotionArea" class="promo-banner">
+            <strong>Promotion:</strong> <span id="promoText"></span>
+        </div>
+
+        <!-- Owner Promotion Box -->
+        <div id="ownerPromoBox" class="card" style="display:none;">
+            <h3>Add Promotion</h3>
+            <input id="promoInput" type="text" placeholder="Enter promotion text">
+            <button onclick="submitPromotion()">Submit Promotion</button>
+        </div>
+
+        <!-- Filters -->
+        <div class="card">
+            <label for="quality">Quality</label>
+            <select id="quality">
+                <option value="">Any</option>
+                <option value="4">4★ and up</option>
+                <option value="3">3★ and up</option>
+            </select>
+
+            <label for="budget">Budget</label>
+            <select id="budget">
+                <option value="">Any</option>
+                <option value="$">$</option>
+                <option value="$$">$$</option>
+                <option value="$$$">$$$</option>
+            </select>
+
+            <label for="distance">Max Distance (miles)</label>
+            <input type="number" id="distance" placeholder="e.g., 5">
+
+            <button onclick="searchRestaurants()">Search</button>
+            <button style="margin-top:10px; background:#4caf50;" onclick="explore()">Surprise Me</button>
+        </div>
+
+        <!-- Results -->
+        <div class="card">
+            <h3>Results</h3>
+            <div id="results"></div>
+        </div>
+
+    </div>
+
+    <script src="/static/home.js"></script>
+
+</body>
+
+</html>

@@ -72,3 +72,16 @@ button:hover {
     margin-bottom: 16px;
     border-radius: 6px;
 }
+
+.logout-btn {
+    background: white;
+    color: black;
+    border: 1px solid #ccc;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background: #f2f2f2;
+}
